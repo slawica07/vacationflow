@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   format, startOfWeek, addDays, getISOWeek, startOfMonth,
@@ -37,36 +36,36 @@ export default function App() {
       const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
       total += (vacations[dateStr]?.length || 0);
     }
-    return total >= 25;
+    return total >= 35;
   };
 
   const addWeekVacation = async (day, action) => {
     const weekStart = startOfWeek(day, { weekStartsOn: 1 });
 
-    if (action.toLowerCase() === 'd') {
+    if (action === 'd') {
       if (isMaxReachedForWeek(day)) {
         setMessage("Nie można dodać urlopu – osiągnięto limit 5 osób na tydzień.");
         return;
       }
       const name = prompt("Podaj swoje imię:");
       if (!name || !/^[A-Za-zÀ-ÿ\- ]{2,}$/.test(name)) {
-        setMessage("Nieprawidłowe imię. Użyj tylko liter i minimum 2 znaków.");
+        setMessage("Nieprawidłowe imię.");
         return;
       }
       const entries = Array.from({ length: 7 }, (_, i) => ({
         date: format(addDays(weekStart, i), "yyyy-MM-dd"),
         username: name
       }));
-      await supabase.from('vacations').insert(entries);
+      await supabase.from("vacations").insert(entries);
       const updated = { ...vacations };
       entries.forEach(({ date, username }) => {
         updated[date] = [...(updated[date] || []), username];
       });
       setVacations(updated);
       setMessage("Urlop dodany na tydzień.");
-    } else if (action.toLowerCase() === 'u') {
+    } else if (action === 'u') {
       const pass = prompt("Podaj hasło administratora:");
-      if (pass !== 'Capital1234') {
+      if (pass !== "Capital1234") {
         setMessage("Nieprawidłowe hasło.");
         return;
       }
@@ -91,7 +90,7 @@ export default function App() {
       await supabase.from("vacations").delete().not("username", "is", null);
       const all = Object.entries(updated).flatMap(([date, users]) => users.map(username => ({ date, username })));
       await supabase.from("vacations").insert(all);
-      setMessage("Usunięto urlop na cały tydzień dla: " + name);
+      setMessage("Usunięto urlop dla: " + name);
     }
   };
 
@@ -101,7 +100,7 @@ export default function App() {
       users.map(username => ({ date, username }))
     );
     await supabase.from("vacations").insert(all);
-    setMessage("Dane zostały zapisane do bazy danych.");
+    setMessage("Dane zostały zapisane.");
   };
 
   const handleRefresh = async () => {
@@ -112,9 +111,9 @@ export default function App() {
         grouped[date] = grouped[date] ? [...grouped[date], username] : [username];
       });
       setVacations(grouped);
-      setMessage("Dane odświeżone z bazy.");
+      setMessage("Dane odświeżone.");
     } else {
-      setMessage("Błąd podczas odświeżania danych.");
+      setMessage("Błąd przy odświeżaniu.");
     }
   };
 
@@ -162,7 +161,7 @@ export default function App() {
                       <li key={index} className="font-bold">{user}</li>
                     ))}
                   </ul>
-                  {isMaxReachedForWeek(day) && <div className="text-red-500 text-xs mt-1">Limit 5 osób na urlopie</div>}
+                  {isMaxReachedForWeek(day) && <div className="text-red-500 text-xs mt-1">Limit 5 osób</div>}
                   {activeDay === format(day, "yyyy-MM-dd") && (
                     <div className="mt-2 flex flex-col gap-1">
                       <button onClick={() => addWeekVacation(day, 'd')} className="bg-blue-100 hover:bg-blue-300 text-xs rounded px-2 py-1">Dodaj urlop</button>
@@ -178,7 +177,7 @@ export default function App() {
       <div className="mt-6 flex flex-wrap gap-2 items-center">
         <button onClick={handleManualSave} className="bg-green-200 hover:bg-green-400 px-4 py-1 rounded text-sm">Zapisz</button>
         <button onClick={handleRefresh} className="bg-blue-200 hover:bg-blue-400 px-4 py-1 rounded text-sm">Odśwież</button>
-        <span className="text-sm text-gray-600">Aby zarządzać wpisem urlopowym, kliknij w konkretny dzień w kalendarzu.</span>
+        <span className="text-sm text-gray-600">Kliknij w dzień, aby zarządzać wpisem urlopowym.</span>
       </div>
       {message && <p className="mt-4 text-sm text-green-600">{message}</p>}
     </div>

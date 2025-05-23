@@ -1,4 +1,3 @@
-// ...importy bez zmian
 import React, { useState, useEffect } from "react";
 import {
   format,
@@ -18,14 +17,13 @@ import {
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://mgcvhwmfidulpptpqiaj.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // skrócony dla czytelności
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
   const [vacations, setVacations] = useState({});
   const [message, setMessage] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [activeDay, setActiveDay] = useState(null);
 
   useEffect(() => {
     const fetchVacations = async () => {
@@ -45,7 +43,21 @@ export default function App() {
 
   const usersOnDate = (date) => vacations[format(date, "yyyy-MM-dd")] || [];
 
+  const isMaxReachedForWeek = (day) => {
+    const weekStart = startOfWeek(day, { weekStartsOn: 1 });
+    let total = 0;
+    for (let i = 0; i < 5; i++) {
+      const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
+      total += (vacations[dateStr]?.length || 0);
+    }
+    return total >= 25;
+  };
+
   const addWeekVacation = async (day) => {
+    if (isMaxReachedForWeek(day)) {
+      setMessage("Nie można dodać urlopu – osiągnięto limit 5 osób na tydzień.");
+      return;
+    }
     const weekStart = startOfWeek(day, { weekStartsOn: 1 });
     const name = prompt("Podaj swoje imię:");
     if (!name) return;
@@ -60,33 +72,6 @@ export default function App() {
     });
     setVacations(updated);
     setMessage("Urlop dodany na tydzień.");
-  };
-
-  const editVacation = async (day) => {
-    const adminPass = prompt("Podaj hasło administratora:");
-    if (adminPass !== "Capital1234") return setMessage("Nieprawidłowe hasło.");
-    const name = prompt("Podaj nowe imię:");
-    const dateStr = format(day, "yyyy-MM-dd");
-    if (!name) return;
-    await supabase.from('vacations').delete().eq('date', dateStr);
-    await supabase.from('vacations').insert([{ date: dateStr, username: name }]);
-    const updated = { ...vacations, [dateStr]: [name] };
-    setVacations(updated);
-    setMessage("Edytowano wpis urlopowy.");
-  };
-
-  const deleteVacation = async (day) => {
-    const adminPass = prompt("Podaj hasło administratora:");
-    if (adminPass !== "Capital1234") return setMessage("Nieprawidłowe hasło.");
-    const name = prompt("Podaj imię do usunięcia:");
-    const dateStr = format(day, "yyyy-MM-dd");
-    if (!name) return;
-    await supabase.from('vacations').delete().eq('date', dateStr).eq('username', name);
-    const updated = { ...vacations };
-    updated[dateStr] = (updated[dateStr] || []).filter(u => u !== name);
-    if (updated[dateStr].length === 0) delete updated[dateStr];
-    setVacations(updated);
-    setMessage("Wpis usunięty.");
   };
 
   const monthStart = startOfMonth(selectedDate);
@@ -122,7 +107,7 @@ export default function App() {
               return (
                 <div
                   key={i}
-                  className={`border rounded p-2 min-h-[100px] text-sm relative ${isCurrentMonth ? "bg-white" : "bg-gray-100"} ${isTodayClass}`}
+                  className={`border rounded p-2 min-h-[100px] text-sm relative ${isCurrentMonth ? (getDay(day) >= 5 ? "bg-red-100" : "bg-white") : "bg-gray-100"} ${isTodayClass}`}
                 >
                   <div className="font-bold text-xs">{format(day, "d")}</div>
                   <ul className="text-xs">
@@ -130,16 +115,15 @@ export default function App() {
                       <li key={index}>{user}</li>
                     ))}
                   </ul>
-                  <div className="absolute bottom-1 left-1 right-1 flex gap-1 flex-wrap">
-                    <button onClick={() => addWeekVacation(day)} className="bg-blue-100 hover:bg-blue-300 text-xs px-1 rounded">Dodaj</button>
-                    <button onClick={() => editVacation(day)} className="bg-yellow-100 hover:bg-yellow-300 text-xs px-1 rounded">Edytuj</button>
-                    <button onClick={() => deleteVacation(day)} className="bg-red-100 hover:bg-red-300 text-xs px-1 rounded">Usuń</button>
-                  </div>
+                  {isMaxReachedForWeek(day) && <div className="text-red-500 text-xs mt-1">Limit 5 osób na urlopie</div>}
                 </div>
               );
             })}
           </React.Fragment>
         ))}
+      </div>
+      <div className="mt-6 flex flex-wrap gap-2">
+        <span className="text-sm text-gray-600">Aby zarządzać wpisem urlopowym, kliknij w konkretny dzień w kalendarzu.</span>
       </div>
       {message && <p className="mt-4 text-sm text-green-600">{message}</p>}
     </div>

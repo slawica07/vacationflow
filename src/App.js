@@ -37,16 +37,31 @@ export default function App() {
   
 const addWeekVacation = async (day) => {
     // Sprawdzenie limitu 5 osób na tydzień
-    const weekStart = startOfWeek(day, { weekStartsOn: 1 });
+    const start = startOfWeek(day, { weekStartsOn: 1 });
     let total = 0;
     for (let i = 0; i < 7; i++) {
-      const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
+      const dateStr = format(addDays(start, i), "yyyy-MM-dd");
       total += (vacations[dateStr]?.length || 0);
     }
     if (total >= 35) {
       setMessage("Nie można dodać urlopu – osiągnięto limit 5 osób na tydzień.");
       return;
     }
+
+    const name = prompt("Podaj swoje imię:");
+    if (!name || name.length < 2) return;
+    const entries = Array.from({ length: 7 }, (_, i) => ({
+      date: format(addDays(start, i), "yyyy-MM-dd"),
+      username: name
+    }));
+    await supabase.from("vacations").insert(entries);
+    const updated = { ...vacations };
+    entries.forEach(({ date, username }) => {
+      updated[date] = [...(updated[date] || []), username];
+    });
+    setVacations(updated);
+    setMessage("Urlop dodany na tydzień.");
+};
 
     const name = prompt("Podaj swoje imię:");
     if (!name || name.length < 2) return;

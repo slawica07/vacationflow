@@ -6,35 +6,30 @@ import {
 } from 'date-fns';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient('https://mgcvhwmfidulpptpqiaj.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...');
+const supabase = createClient(
+  'https://mgcvhwmfidulpptpqiaj.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nY3Zod21maWR1bHBwdHBxaWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMjQzMzYsImV4cCI6MjA2MzYwMDMzNn0.SbqnXvDVVsUiz6C74i58vcn-FIefX3TXTfYWj8Ark8A'
+);
 
 export default function App() {
-  const [vacations, setVacations] = useState({});
   const [message, setMessage] = useState("");
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [activeDay, setActiveDay] = useState(null);
 
   useEffect(() => {
     const fetchVacations = async () => {
       const { data, error } = await supabase.from("vacations").select("*");
-      if (data) {
-        const grouped = {};
-        data.forEach(({ date, username }) => {
-          grouped[date] = grouped[date] ? [...grouped[date], username] : [username];
-        });
-        setVacations(grouped);
-      } else if (error) {
-        setMessage("Błąd podczas odświeżania danych: " + (error?.message || "Nieznany błąd"));
+      if (error) {
+        setMessage("Błąd: " + error.message);
+      } else {
+        setMessage("Połączenie udane. Wczytano " + data.length + " rekordów.");
       }
     };
     fetchVacations();
   }, []);
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Test połączenia z Supabase</h1>
-      <p>Sprawdź, czy dane się załadują poprawnie.</p>
-      {message && <p className="text-red-600 mt-4">{message}</p>}
+    <div className="p-4 max-w-4xl mx-auto">
+      <h1 className="text-xl font-bold mb-4">Test połączenia z Supabase</h1>
+      <p className="text-gray-700">{message}</p>
     </div>
   );
 }

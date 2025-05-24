@@ -162,7 +162,14 @@ const addWeekVacation = async (day) => {
         ))}
       </div>
       <div className="mt-6 flex gap-2">
-        <button onClick={handleSave} className="bg-green-200 hover:bg-green-400 px-4 py-1 rounded text-sm">Zapisz</button>
+        <button onClick={async () => {
+          const all = Object.entries(vacations).flatMap(([date, users]) =>
+            users.map(username => ({ date, username }))
+          );
+          await supabase.from("vacations").delete().not("username", "is", null);
+          await supabase.from("vacations").insert(all);
+          setMessage("Dane zapisane.");
+        }} className="bg-green-200 hover:bg-green-400 px-4 py-1 rounded text-sm">Zapisz</button>
         <button onClick={fetchVacations} className="bg-blue-200 hover:bg-blue-400 px-4 py-1 rounded text-sm">Odśwież</button>
       </div>
       {message && <p className="mt-4 text-sm text-green-600">{message}</p>}

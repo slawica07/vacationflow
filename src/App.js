@@ -34,9 +34,16 @@ export default function App() {
     }
   };
 
-  
-const addWeekVacation = async (day) => {
-    // Sprawdzenie limitu 5 osób na tydzień
+  const handleSave = async () => {
+    const all = Object.entries(vacations).flatMap(([date, users]) =>
+      users.map(username => ({ date, username }))
+    );
+    await supabase.from("vacations").delete().not("username", "is", null);
+    await supabase.from("vacations").insert(all);
+    setMessage("Dane zapisane.");
+  };
+
+  const addWeekVacation = async (day) => {
     const start = startOfWeek(day, { weekStartsOn: 1 });
     let total = 0;
     for (let i = 0; i < 7; i++) {
@@ -61,22 +68,6 @@ const addWeekVacation = async (day) => {
     });
     setVacations(updated);
     setMessage("Urlop dodany na tydzień.");
-};
-
-    const name = prompt("Podaj swoje imię:");
-    if (!name || name.length < 2) return;
-    const weekStart = startOfWeek(day, { weekStartsOn: 1 });
-    const entries = Array.from({ length: 7 }, (_, i) => ({
-      date: format(addDays(weekStart, i), "yyyy-MM-dd"),
-      username: name
-    }));
-    await supabase.from("vacations").insert(entries);
-    const updated = { ...vacations };
-    entries.forEach(({ date, username }) => {
-      updated[date] = [...(updated[date] || []), username];
-    });
-    setVacations(updated);
-    setMessage("Dodano urlop dla tygodnia.");
   };
 
   const deleteWeekVacation = async (day) => {
@@ -94,15 +85,6 @@ const addWeekVacation = async (day) => {
     }
     fetchVacations();
     setMessage("Usunięto urlop.");
-  };
-
-  const handleSave = async () => {
-    const all = Object.entries(vacations).flatMap(([date, users]) =>
-      users.map(username => ({ date, username }))
-    );
-    await supabase.from("vacations").delete().not("username", "is", null);
-    await supabase.from("vacations").insert(all);
-    setMessage("Dane zapisane.");
   };
 
   const monthStart = startOfMonth(selectedDate);
@@ -162,14 +144,7 @@ const addWeekVacation = async (day) => {
         ))}
       </div>
       <div className="mt-6 flex gap-2">
-        <button onClick={async () => {
-          const all = Object.entries(vacations).flatMap(([date, users]) =>
-            users.map(username => ({ date, username }))
-          );
-          await supabase.from("vacations").delete().not("username", "is", null);
-          await supabase.from("vacations").insert(all);
-          setMessage("Dane zapisane.");
-        }} className="bg-green-200 hover:bg-green-400 px-4 py-1 rounded text-sm">Zapisz</button>
+        <button onClick={handleSave} className="bg-green-200 hover:bg-green-400 px-4 py-1 rounded text-sm">Zapisz</button>
         <button onClick={fetchVacations} className="bg-blue-200 hover:bg-blue-400 px-4 py-1 rounded text-sm">Odśwież</button>
       </div>
       {message && <p className="mt-4 text-sm text-green-600">{message}</p>}
